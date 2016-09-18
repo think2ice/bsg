@@ -6,6 +6,8 @@ rna <- 'AUGGCCAUGGCGCCCAGAACUGAGAUCAAUAGUACCCGUAUUAACGGGUGA'
 source("https://bioconductor.org/biocLite.R")
 biocLite("Biostrings")
 library(Biostrings)
+# check this documentation:
+# http://web.mit.edu/~r/current/arch/i386_linux26/lib/R/library/Biostrings/html/translate.html
 rna <- RNAString(rna)
 translate(rna)
 data <- read.table("rosalind_prot.txt", quote="\"", comment.char="")
