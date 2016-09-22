@@ -1,39 +1,60 @@
 # Set the workspace 
 setwd("C:/Users/manel/Documents/Universidad/MIRI/Q2A/BSG/datasets")
 # mock data
-dna <- "AGCCATGTAGCTAACTCAGGTTACATGGGGATGACCCCGCGACTTGGATTAGAGTCTCTTTTGGAATAAGCCTGAATGATCCGAGTAGCATCTCAG"
+# dna <- "AGCCATGTAGCTAACTCAGGTTACATGGGGATGACCCCGCGACTTGGATTAGAGTCTCTTTTGGAATAAGCCTGAATGATCCGAGTAGCATCTCAG"
+rosalind_orf <- read.csv("C:/Users/manel/Documents/Universidad/MIRI/Q2A/BSG/datasets/rosalind_orf.txt", sep="")
+dna <- ""
+i <- 1
+for (i in 1:nrow(rosalind_orf)) {
+  dna <- paste(dna, as.character(rosalind_orf[i,1]), sep = "")
+  i <- i+1
+}
+dna
 rna <- gsub("T","U",dna)
+library(Biostrings)
 rna.reverse <- RNAString(rna)
 rna.reverse <- reverseComplement(rna.reverse)
 rna.reverse <- as.character(rna.reverse)
-str(rna)
-str(rna.reverse)
-rna.to.protein <- function (rna) {
-  protein <- ""
+find.start.codon <- function(rna){
   i <- 1
-  while (i < nchar(rna)-1){
+  j <- 1
+  x <- 1
+  while (i < nchar(rna) -1){
     while (i < nchar(rna)-1 && substr(rna ,i,i+2) != "AUG") { # start codon
-      i <- i+1
+        i <- i+1
     }
-    i <- i+3 # skip the start codon
-    j <- 0
-    while (i < nchar(rna)-1 && 
-          substr(rna ,i,i+2) != "UAA" &&
-          substr(rna ,i,i+2) != "UAG" &&
-          substr(rna ,i,i+2) != "UGA") {
-    codon <- substr(rna ,i,i+2)
-    protein <- paste(protein, codon.to.amino.acid(codon),sep="")
+    x[j] <-i
     i <- i+3
-    }
-    protein <- paste(protein," ", sep = "")
     j <- j+1
-    print(j)
   }
-  return(protein)
+  return(x)
 }
-# table of translation
-# http://www.cbs.dtu.dk/courses/27619/codon.html
-codon.to.amino.acid <- function (codon) {
+find.stop.codon <- function(rna, ini){
+  i <- ini
+  while (i < nchar(rna)-1 && substr(rna ,i,i+2) != "UAA"
+          && substr(rna ,i,i+2) != "UAG"
+          && substr(rna ,i,i+2) != "UGA") { # start codon
+      i <- i+3
+  }
+  return(i-1)
+}
+start.codon <-find.start.codon(rna)
+start.codon.reverse <- find.start.codon(rna.reverse)
+j <- 1
+stop.codon <- 1
+for (i in start.codon) {
+  stop.codon[j] <- find.stop.codon(rna, i)
+  j <- j+1
+}
+stop.codon <- stop.codon [stop.codon < nchar(rna)-2]
+j <- 1
+stop.codon.reverse <- 1
+for (i in start.codon.reverse) {
+  stop.codon.reverse[j] <- find.stop.codon(rna.reverse, i)
+  j <- j+1
+}
+stop.codon.reverse <- stop.codon.reverse[stop.codon.reverse < nchar(rna)-2]
+codon.to.aminoacid <- function (codon) {
   
   if (codon == "GCU") return("A") # Ala
   else if (codon == "GCC") return("A") # Ala
@@ -119,6 +140,26 @@ codon.to.amino.acid <- function (codon) {
   
   else return("*")
 }
-(protein <- rna.to.protein(rna))
-(protein.reverse <- rna.to.protein(rna.reverse))
+codon.seq.to.aminoacid <- function (seq){
+  i<- 1
+  protein <- ""
+  while (i < nchar(seq)){
+    protein <- paste(protein, codon.to.aminoacid(substr(seq, i, i+2)), sep = "")
+    i <- i +3
+  }
+  protein <- paste(protein, "\n",sep = "")
+  return(protein)
+}
+rna.to.aminoacid <- function(rna, seq.start, seq.stop){
+  int <- min(length(seq.start), length(seq.stop))
+  x <- 1
+ for (i in 1:int) {
+   x[i] <- codon.seq.to.aminoacid(substr(rna, seq.start[i], seq.stop[i]))
+ }
+  return(x)
+}
+rna.output <- rna.to.aminoacid(rna, start.codon, stop.codon)
+rna.reverse.output <- rna.to.aminoacid(rna.reverse, start.codon.reverse, stop.codon.reverse)
+output <- c(rna.output, rna.reverse.output)
+cat(unique(output))
 
