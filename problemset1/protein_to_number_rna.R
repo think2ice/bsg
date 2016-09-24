@@ -29,7 +29,8 @@ get.diff.rna <- function (protein){
     result <- result * aminoacid.possibility((substr(protein, i, i)))
     result <- result%%1000000
   }
-  result<- 3*result
+  result<- 3*result 
+  result <- result %%1000000
   
   if (result < 1000000){return(result)}
   else{return(result%%1000000)}
